@@ -48,17 +48,15 @@ void SocksFilter::connect(ConnectRequest* connect_request) {
 
     connect_request_ = static_cast<TCPConnectRequest*>(connect_request);
 
-    if (connect_request_->sa_) {
-        sa_ = connect_request_->sa_;
+    if (connect_request_->sa) {
+        sa_ = connect_request_->sa;
     } else {
-        int port = stoi(connect_request_->service_);
-        if (port <= 0 || port > 65535) {
-            throw Error("Bad port number");
-        }
+        int port = connect_request_->port;
+        if (port <= 0 || port > 65535) throw Error("Bad port number");
 
-        host_  = connect_request_->host_;
+        host_  = connect_request_->host;
         port_  = port;
-        hints_ = connect_request_->hints_;
+        hints_ = connect_request_->hints;
     }
 
     socks_connect_request_ = TCPConnectRequest::Builder().to(socks_->host, socks_->port).build();
@@ -249,17 +247,16 @@ void SocksFilter::do_auth() {
 void SocksFilter::do_resolve() {
     _EDEBUGTHIS("do_resolve_host");
     TCP* tcp         = dyn_cast<TCP*>(handle);
-    resolve_request_ = tcp->resolver->resolve(tcp->loop(), host_, panda::to_string(port_), nullptr,
-                                              [=](AbstractResolverSP, ResolveRequestSP, BasicAddressSP address, const CodeError* err) {
-                                                  _EDEBUGTHIS("resolved err:%d", err ? err->code() : 0);
-                                                  if (err || this->state_ == State::canceled) {
-                                                      do_error();
-                                                      return;
-                                                  }
+    resolve_request_ = tcp->resolver->resolve(tcp->loop(), host_, port_, nullptr, [=](AbstractResolverSP, ResolveRequestSP, BasicAddressSP address, const CodeError* err) {
+        _EDEBUGTHIS("resolved err:%d", err ? err->code() : 0);
+        if (err || this->state_ == State::canceled) {
+            do_error();
+            return;
+        }
 
-                                                  sa_ = address->head->ai_addr;
-                                                  do_handshake();
-                                              });
+        sa_ = address->head->ai_addr;
+        do_handshake();
+    });
 
     state(State::resolving_host);
 }
