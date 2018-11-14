@@ -63,16 +63,15 @@ private:
     void init_parser();
 
 private:
-    SocksSP  socks_;
-    State    state_;
-    string   host_;
-    uint16_t port_;
-    addrinfo hints_;
-    SockAddr sa_;
+    SocksSP         socks_;
+    State           state_;
+    string          host_;
+    uint16_t        port_;
+    AddrInfoHintsSP hints_;
+    SockAddr        sa_;
 
     TCPConnectRequest*      connect_request_;
     iptr<TCPConnectRequest> socks_connect_request_;
-    iptr<ResolveRequest>    resolve_request_;
 
     // parser state
     int cs;
