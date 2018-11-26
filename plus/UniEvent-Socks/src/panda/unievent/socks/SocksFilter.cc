@@ -247,7 +247,7 @@ void SocksFilter::do_auth() {
 void SocksFilter::do_resolve() {
     _EDEBUGTHIS("do_resolve_host");
     TCP* tcp = dyn_cast<TCP*>(handle);
-    tcp->resolver()->resolve(host_, panda::to_string(port_), hints_, [=](SimpleResolverSP, ResolveRequestSP, AddrInfoSP address, const CodeError* err) {
+    resolve_request_ = tcp->resolver()->resolve(host_, panda::to_string(port_), hints_, [=](SimpleResolverSP, ResolveRequestSP, AddrInfoSP address, const CodeError* err) {
         _EDEBUGTHIS("resolved err:%d", err ? err->code() : 0);
         if (err || this->state_ == State::canceled) {
             do_error();
@@ -318,4 +318,4 @@ void SocksFilter::do_error(const CodeError* err) {
     }
 }
 
-}}} // namespace panda::event::socks
+}}} // namespace panda::unievent::socks

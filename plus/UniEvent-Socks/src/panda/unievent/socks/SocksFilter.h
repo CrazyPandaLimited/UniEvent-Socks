@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
-#include "Socks.h"
 #include <panda/unievent/TCP.h>
+#include "Socks.h"
 
 namespace panda { namespace unievent { namespace socks {
 
@@ -63,15 +63,15 @@ private:
     void init_parser();
 
 private:
-    SocksSP         socks_;
-    State           state_;
-    string          host_;
-    uint16_t        port_;
+    SocksSP socks_;
+    State state_;
+    string host_;
+    uint16_t port_;
     AddrInfoHintsSP hints_;
-    SockAddr        sa_;
-
-    TCPConnectRequest*      connect_request_;
-    iptr<TCPConnectRequest> socks_connect_request_;
+    SockAddr sa_;
+    ResolveRequestSP resolve_request_;
+    TCPConnectRequest* connect_request_;
+    TCPConnectRequestSP socks_connect_request_;
 
     // parser state
     int cs;
@@ -125,4 +125,4 @@ struct SocksCommandConnectRequest : public WriteRequest {
     }
 };
 
-}}} // namespace panda::event::socks
+}}} // namespace panda::unievent::socks
