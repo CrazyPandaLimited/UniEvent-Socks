@@ -1,5 +1,4 @@
 #pragma once
-#include <cstdint>
 #include <panda/string.h>
 #include <panda/uri/socks.h>
 #include <panda/unievent/Error.h>

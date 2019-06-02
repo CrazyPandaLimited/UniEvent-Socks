@@ -1,13 +1,9 @@
 #include "SocksFilter.h"
-
+#include <panda/string.h>
+#include <panda/unievent/Tcp.h>
+#include <panda/unievent/Timer.h>
 #include <panda/unievent/Debug.h>
 #include <panda/unievent/Resolver.h>
-#include <panda/unievent/Stream.h>
-#include <panda/unievent/StreamFilter.h>
-#include <panda/unievent/TCP.h>
-#include <panda/unievent/Timer.h>
-#include <panda/string.h>
-
 #include <vector>
 
 namespace panda { namespace unievent { namespace socks {
@@ -19,74 +15,54 @@ namespace {
 
 const void* SocksFilter::TYPE = &typeid(SocksFilter);
 
-SocksFilter::~SocksFilter () { _EDTOR(); }
+#define ERROR_SERVER_USE Error("this stream is listening but socks is a client filter only")
 
-SocksFilter::SocksFilter (Stream* stream, SocksSP socks) : StreamFilter(stream, TYPE, PRIORITY), socks_(socks), state_(State::initial) {
+SocksFilter::SocksFilter (Stream* stream, const SocksSP& socks) : StreamFilter(stream, TYPE, PRIORITY), socks(socks), state(State::initial) {
     _ECTOR();
+    if (stream->listening()) throw ERROR_SERVER_USE;
     init_parser();
 }
 
-void SocksFilter::init_parser() {
+SocksFilter::~SocksFilter () { _EDTOR(); }
+
+void SocksFilter::init_parser () {
     atyp   = 0;
     rep    = 0;
     noauth = false;
 }
 
-void SocksFilter::on_connection(StreamSP stream, const CodeError* err) {
-    _EDEBUGTHIS("on_connection");
-    // socks is a client only filter, so disable for incoming connections
-    state(State::terminal);
-    NextFilter::on_connection(stream, err);
-}
+void SocksFilter::listen () { throw ERROR_SERVER_USE; }
 
-void SocksFilter::connect(ConnectRequest* connect_request) {
-    _EDEBUGTHIS("connect request: %p, state: %d", connect_request, (int)state_);
-    if (state_ == State::terminal) {
-        NextFilter::connect(connect_request);
-        return;
-    }
+void SocksFilter::tcp_connect (const TcpConnectRequestSP& req) {
+    _EDEBUGTHIS("tcp_connect: %p, state: %d", req, (int)state);
+    if (state == State::terminal) return NextFilter::tcp_connect(req);
 
-    connect_request_ = static_cast<TCPConnectRequest*>(connect_request);
-
-    if (connect_request_->sa) {
-        sa_ = connect_request_->sa;
+    if (req->addr) {
+        addr = req->addr;
+        if (!addr.is_inet4() && !addr.is_inet6()) throw Error("Unknown address family");
     } else {
-        int port = connect_request_->port;
-        if (port <= 0 || port > 65535) throw Error("Bad port number");
-
-        host_  = connect_request_->host;
-        port_  = port;
-        hints_ = connect_request_->hints;
+        host  = req->host;
+        port  = req->port;
+        hints = req->hints;
     }
 
-    socks_connect_request_ = TCPConnectRequest::Builder().to(socks_->host, socks_->port).build();
+    connect_request = req;
 
-    handle->attach(socks_connect_request_);
-
-    state(State::connecting_proxy);
-
-    NextFilter::connect(socks_connect_request_);
+    auto subreq = (new TcpConnectRequest())->to(socks->host, socks->port);
+    state = State::connecting_proxy;
+    subreq_tcp_connect(connect_request, subreq);
 }
 
-void SocksFilter::on_connect(const CodeError* err, ConnectRequest* connect_request) {
-    _EDEBUGTHIS("on_connect, err: %d, state: %d", err ? err->code() : 0, (int)state_);
-    if (state_ == State::terminal) {
-        NextFilter::on_connect(err, connect_request);
-        return;
-    }
+void SocksFilter::handle_connect (const CodeError& err, const ConnectRequestSP& req) {
+    _EDEBUGTHIS("handle_connect, err: %d, state: %d", err.code().value(), (int)state);
+    if (state == State::terminal) return NextFilter::handle_connect(err, req);
+    subreq_done(req);
     
-    if (err) {
-        do_error(err);
-        return;
-    }
+    if (err) return do_error(err);
+    auto read_err = read_start();
+    if (read_err) return do_error(read_err);
 
-    auto read_err = temp_read_start();
-    if (read_err) {
-        do_error(read_err);
-        return;
-    }
-
-    if (socks_->socks_resolve || sa_) {
+    if (socks->socks_resolve || addr) {
         // we have resolved the host or proxy will resolve it for us
         do_handshake();
     } else {
@@ -95,29 +71,29 @@ void SocksFilter::on_connect(const CodeError* err, ConnectRequest* connect_reque
     }
 }
 
-void SocksFilter::write(WriteRequest* write_request) {
-    _EDEBUGTHIS("write, state: %d", (int)state_);
-    NextFilter::write(write_request);
+void SocksFilter::write (const WriteRequestSP& req) {
+    _EDEBUGTHIS("write, state: %d", (int)state);
+    NextFilter::write(req);
 }
 
-void SocksFilter::on_write(const CodeError* err, WriteRequest* write_request) {
-    _EDEBUGTHIS("on_write, err: %d, state: %d", err ? err->code() : 0, (int)state_);
-    if (state_ == State::terminal) {
-        NextFilter::on_write(err, write_request);
-        return;
-    }
+void SocksFilter::handle_write (const CodeError& err, const WriteRequestSP& req) {
+    _EDEBUGTHIS("handle_write, err: %d, state: %d", err.code().value(), (int)state);
+    if (state == State::terminal) return NextFilter::handle_write(err, req);
+    subreq_done(req);
 
-    write_request->event(handle, err, write_request);
-    write_request->release();
-    handle->release();
+    if (err) return do_error(err);
+
+    switch (state) {
+        case State::handshake_write : state = State::handshake_reply; break;
+        case State::auth_write      : state = State::auth_reply;      break;
+        case State::connect_write   : state = State::connect_reply;   break;
+        default: abort(); // should not happen
+    }
 }
 
-void SocksFilter::on_read(string& buf, const CodeError* err) {
-    _EDEBUG("on_read, %lu bytes, state %d", buf.length(), (int)state_);
-    if (state_ == State::terminal) {
-        NextFilter::on_read(buf, err);
-        return;
-    }
+void SocksFilter::handle_read (string& buf, const CodeError& err) {
+    _EDEBUG("handle_read, %lu bytes, state %d", buf.length(), (int)state);
+    if (state == State::terminal) return NextFilter::handle_read(buf, err);
 
     _EDUMP(buf, (int)buf.length(), 100);
 
@@ -131,7 +107,7 @@ void SocksFilter::on_read(string& buf, const CodeError* err) {
     const char* eof = pe;
 
     // select reply parser by our state
-    switch (state_) {
+    switch (state) {
         case State::handshake_reply:
             cs = socks5_client_parser_en_negotiate_reply;
             break;
@@ -153,169 +129,114 @@ void SocksFilter::on_read(string& buf, const CodeError* err) {
             return;
     }
 
-    state_ = State::parsing;
+    state = State::parsing;
 
-// generated parser logic
-#define MACHINE_EXEC
-#include "SocksParser.cc"
+    // generated parser logic
+    #define MACHINE_EXEC
+    #include "SocksParser.cc"
 
-    if (state_ == State::error) {
+    if (state == State::error) {
         _EDEBUGTHIS("parser exiting in error state on pos: %d", int(p - buffer_ptr));
-    } else if (state_ != State::parsing) {
+    } else if (state != State::parsing) {
         _EDEBUGTHIS("parser finished");
     }
 }
 
-void SocksFilter::on_shutdown(const CodeError* err, ShutdownRequest* req) {
-    _EDEBUGTHIS("on_shutdown, err: %d", err ? err->code() : 0);
-    NextFilter::on_shutdown(err, req);
+void SocksFilter::handle_shutdown (const CodeError& err, const ShutdownRequestSP& req) {
+    _EDEBUGTHIS("handle_shutdown, err: %d", err.code().value());
+    NextFilter::handle_shutdown(err, req);
 }
 
-void SocksFilter::on_eof() {
-    _EDEBUGTHIS("on_eof, state: %d", (int)state_);
-    if(state_ == State::terminal) {
-        NextFilter::on_eof();
-        return;
-    }
+void SocksFilter::handle_eof () {
+    _EDEBUGTHIS("handle_eof, state: %d", (int)state);
+    if (state == State::terminal) return NextFilter::handle_eof();
 
-    if (state_ == State::parsing || state_ == State::handshake_reply || state_ == State::auth_reply || state_ == State::connect_reply) {
+    if (state == State::parsing || state == State::handshake_reply || state == State::auth_reply || state == State::connect_reply) {
         do_error();
         return;
     }
 }
 
-void SocksFilter::on_reinit() {
-    _EDEBUGTHIS("on_reinit, state: %d, connecting: %d", (int)state_, (int)handle->connecting());
-    if(state_ == State::terminal) {
-        NextFilter::on_reinit();
-        return;
-    }
-    
-    if (state_ == State::handshake_reply || state_ == State::auth_reply || state_ == State::connect_reply) {
-        state(State::initial);
-        NextFilter::on_connect(CodeError(ERRNO_ECANCELED), connect_request_);
-        return;
-    }
-
-    if(state_ == State::connecting_proxy) {
-        state(State::initial);
-    }
+void SocksFilter::reset () {
+    _EDEBUGTHIS("reset, state: %d", (int)state);
+    assert(state == State::initial);
+    NextFilter::reset();
 }
 
-void SocksFilter::do_handshake() {
+void SocksFilter::do_handshake () {
     _EDEBUGTHIS("do_handshake");
-    SocksHandshakeRequest* socks_handshake_request = new SocksHandshakeRequest(
-        [=](Stream*, const CodeError* err, WriteRequest*) {
-            _EDEBUGTHIS("handshake callback");
-            if (err || this->state_ == State::canceled) {
-                do_error();
-                return;
-            }
-
-            state(State::handshake_reply);
-        },
-        socks_);
-
-    state(State::handshake_write);
-    handle->attach(socks_handshake_request);
-    handle->retain();
-    socks_handshake_request->retain();
-    NextFilter::write(socks_handshake_request);
+    state = State::handshake_write;
+    string data = socks->loginpassw() ? string("\x05\x02\x00\x02") : string("\x05\x01\x00");
+    subreq_write(connect_request, new WriteRequest(data));
 }
 
-void SocksFilter::do_auth() {
+void SocksFilter::do_auth () {
     _EDEBUGTHIS("do_auth");
-    SocksAuthRequest* socks_auth_request = new SocksAuthRequest(
-        [=](Stream*, const CodeError* err, WriteRequest*) {
-            _EDEBUGTHIS("auth callback");
-            if (err || this->state_ == State::canceled) {
-                do_error();
-                return;
-            }
-
-            state(State::auth_reply);
-        },
-        socks_);
-
-    state(State::auth_write);
-    handle->attach(socks_auth_request);
-    handle->retain();
-    socks_auth_request->retain();
-    NextFilter::write(socks_auth_request);
+    state = State::auth_write;
+    string data = string("\x01") + (char)socks->login.length() + socks->login + (char)socks->passw.length() + socks->passw;
+    subreq_write(connect_request, new WriteRequest(data));
 }
 
-void SocksFilter::do_resolve() {
+void SocksFilter::do_resolve () {
     _EDEBUGTHIS("do_resolve_host");
-    TCP* tcp = dyn_cast<TCP*>(handle);
-    resolve_request_ = tcp->resolver()->resolve(host_, panda::to_string(port_), hints_, [=](SimpleResolverSP, ResolveRequestSP, AddrInfoSP address, const CodeError* err) {
-        _EDEBUGTHIS("resolved err:%d", err ? err->code() : 0);
-        if (err || this->state_ == State::canceled) {
-            do_error();
-            return;
-        }
-
-        sa_ = address->head->ai_addr;
-        do_handshake();
-    }, tcp->cached_resolver);
-
-    state(State::resolving_host);
+    state = State::resolving_host;
+    resolve_request = handle->loop()->resolver()->resolve()
+        ->node(host)
+        ->port(port)
+        ->hints(hints)
+        ->use_cache(connect_request->cached)
+        ->on_resolve([this](const AddrInfo& ai, const CodeError& err, const Resolver::RequestSP&) {
+            _EDEBUGTHIS("resolved err:%d", err.code().value());
+            if (err) return do_error(err);
+            addr = ai.addr();
+            resolve_request = nullptr;
+            do_handshake();
+        })
+    ->run();
 }
 
-void SocksFilter::do_connect() {
+void SocksFilter::do_connect () {
     _EDEBUGTHIS("do_connect");
-    SocksCommandConnectRequest* socks_command_connect_request;
-    if (sa_) {
-        socks_command_connect_request = new SocksCommandConnectRequest(
-            [=](Stream*, const CodeError* err, WriteRequest*) {
-                _EDEBUGTHIS("command connect callback %d", err ? err->code() : 0);
-                if (err || this->state_ == State::canceled) {
-                    do_error();
-                    return;
-                }
-
-                state(State::connect_reply);
-            },
-            sa_);
-    } else {
-        socks_command_connect_request = new SocksCommandConnectRequest(
-            [=](Stream*, const CodeError* err, WriteRequest*) {
-                _EDEBUGTHIS("command connect callback %d", err ? err->code() : 0);
-                if (err || this->state_ == State::canceled) {
-                    _EDEBUGTHIS("leaving");
-                    do_error();
-                    return;
-                }
-
-                state(State::connect_reply);
-            },
-            host_, port_);
-    }
-    state(State::connect_write);
-    handle->attach(socks_command_connect_request);
-    handle->retain();
-    socks_command_connect_request->retain();
-    NextFilter::write(socks_command_connect_request);
-}
-
-void SocksFilter::do_connected() {
-    _EDEBUGTHIS("do_connected");
-    state(State::terminal);
-    restore_read_start(); // stop reading if handle don't want to
-    NextFilter::on_connect(nullptr, connect_request_);
-}
-
-void SocksFilter::do_error(const CodeError* err) {
-    _EDEBUGTHIS("do_error");
-    if(state_ != State::error) {
-        init_parser();
-        if(err && err->code() == ERRNO_ECANCELED) {
-            state(State::initial);
+    state = State::connect_write;
+    string data;
+    if (addr) {
+        if (addr.is_inet4()) {
+            auto& sa4 = addr.inet4();
+            data = string("\x05\x01\x00\x01") + string_view((char*)&sa4.addr(), 4) + string_view((char*)&sa4.get()->sin_port, 2);
         } else {
-            state(State::error);
+            auto& sa6 = addr.inet6();
+            data = string("\x05\x01\x00\x04") + string((char*)&sa6.addr(), 16) + string((char*)&sa6.get()->sin6_port, 2);
         }
-        restore_read_start();
-        NextFilter::on_connect(err, connect_request_);
+    } else {
+        uint16_t nport = htons(port);
+        data = string("\x05\x01\x00\x03") + (char)host.length() + host + string((char*)&nport, 2);
     }
+    subreq_write(connect_request, new WriteRequest(data));
 }
 
-}}} // namespace panda::unievent::socks
+void SocksFilter::do_connected () {
+    _EDEBUGTHIS("do_connected");
+    state = State::terminal;
+    read_stop();
+    NextFilter::handle_connect(CodeError(), std::move(connect_request));
+}
+
+void SocksFilter::do_error (const CodeError& err) {
+    _EDEBUGTHIS("do_error");
+    if (state == State::error) return;
+
+    if (resolve_request) {
+        resolve_request->event.remove_all();
+        resolve_request->cancel();
+        resolve_request = nullptr;
+    }
+
+    read_stop();
+    init_parser();
+
+    state = (err.code() == std::errc::operation_canceled) ? State::initial : State::error;
+
+    NextFilter::handle_connect(err, std::move(connect_request));
+}
+
+}}}
