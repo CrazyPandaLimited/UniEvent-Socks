@@ -34,7 +34,7 @@ void SocksFilter::init_parser () {
 void SocksFilter::listen () { throw ERROR_SERVER_USE; }
 
 void SocksFilter::tcp_connect (const TcpConnectRequestSP& req) {
-    _EDEBUGTHIS("tcp_connect: %p, state: %d", req, (int)state);
+    _EDEBUGTHIS("tcp_connect: %p, state: %d", req.get(), (int)state);
     if (state == State::terminal) return NextFilter::tcp_connect(req);
 
     if (req->addr) {
