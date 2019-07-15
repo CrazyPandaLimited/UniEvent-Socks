@@ -5,7 +5,7 @@
 
 namespace panda { namespace unievent { namespace socks {
 
-void use_socks (const TcpSP& handle, std::string_view host, uint16_t port = 1080, std::string_view login = "", std::string_view passw = "", bool socks_resolve = true);
+void use_socks (const TcpSP& handle, string_view host, uint16_t port = 1080, string_view login = "", string_view passw = "", bool socks_resolve = true);
 void use_socks (const TcpSP& handle, const SocksSP& socks);
 
 }}}
