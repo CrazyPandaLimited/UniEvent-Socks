@@ -3,7 +3,7 @@
 #include <panda/string_view.h>
 #include <panda/unievent/Tcp.h>
 
-#define EVENT_LIB_DEBUG 3
+//#define EVENT_LIB_DEBUG 3
 
 namespace panda { namespace unievent { namespace socks {
 
