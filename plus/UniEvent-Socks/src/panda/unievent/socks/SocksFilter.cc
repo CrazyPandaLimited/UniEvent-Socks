@@ -1,8 +1,8 @@
 #include "SocksFilter.h"
+#include "Debug.h"
 #include <panda/string.h>
 #include <panda/unievent/Tcp.h>
 #include <panda/unievent/Timer.h>
-#include <panda/unievent/Debug.h>
 #include <panda/unievent/Resolver.h>
 #include <vector>
 
@@ -92,7 +92,7 @@ void SocksFilter::handle_write (const CodeError& err, const WriteRequestSP& req)
 }
 
 void SocksFilter::handle_read (string& buf, const CodeError& err) {
-    _EDEBUG("handle_read, %lu bytes, state %d", buf.length(), (int)state);
+    _EDEBUG("handle_read, %lu bytes, state %d, err:%s", buf.length(), (int)state, err.what());
     if (state == State::terminal) return NextFilter::handle_read(buf, err);
 
     _EDUMP(buf, (int)buf.length(), 100);
