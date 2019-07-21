@@ -9,7 +9,7 @@ using panda::net::SockAddr;
 struct SocksFilter;
 using SocksFilterSP = iptr<SocksFilter>;
 
-struct SocksFilter : StreamFilter, lib::AllocatedObject<SocksFilter> {
+struct SocksFilter : StreamFilter, AllocatedObject<SocksFilter> {
     enum class State {
         initial          = 1,
         connecting_proxy = 2,
