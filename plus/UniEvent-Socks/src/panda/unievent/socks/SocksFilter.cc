@@ -159,7 +159,6 @@ void SocksFilter::handle_eof () {
 
 void SocksFilter::reset () {
     _EDEBUGTHIS("reset, state: %d", (int)state);
-    assert(state == State::initial);
     NextFilter::reset();
 }
 
