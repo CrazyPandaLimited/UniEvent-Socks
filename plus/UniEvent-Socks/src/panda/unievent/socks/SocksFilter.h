@@ -14,15 +14,12 @@ struct SocksFilter : StreamFilter, AllocatedObject<SocksFilter> {
         initial          = 1,
         connecting_proxy = 2,
         resolving_host   = 3, // cancelable async resolve
-        handshake_write  = 4, // handshaking, not cancelable
-        handshake_reply  = 5, // waiting for reply, not cancelable
-        auth_write       = 6,
-        auth_reply       = 7,
-        connect_write    = 8,
-        connect_reply    = 9,
-        parsing          = 10, // something not parsed yet
-        error            = 11,
-        terminal         = 12
+        handshake_reply  = 4, // waiting for reply, not cancelable
+        auth_reply       = 5,
+        connect_reply    = 6,
+        parsing          = 7, // something not parsed yet
+        error            = 8,
+        terminal         = 9
     };
     static constexpr double PRIORITY = 100;
     static const     void*  TYPE;
@@ -46,14 +43,12 @@ private:
     uint8_t atyp;
     uint8_t rep;
 
-    void listen            () override;
-    void tcp_connect       (const TcpConnectRequestSP&) override;
-    void handle_connect    (const CodeError&, const ConnectRequestSP&) override;
-    void handle_read       (string&, const CodeError&) override;
-    void write             (const WriteRequestSP&) override;
-    void handle_write      (const CodeError&, const WriteRequestSP&) override;
-    void handle_eof        () override;
-    void handle_shutdown   (const CodeError&, const ShutdownRequestSP&) override;
+    void listen         () override;
+    void tcp_connect    (const TcpConnectRequestSP&) override;
+    void handle_connect (const CodeError&, const ConnectRequestSP&) override;
+    void handle_read    (string&, const CodeError&) override;
+    void handle_write   (const CodeError&, const WriteRequestSP&) override;
+    void handle_eof     () override;
 
     void reset () override;
 

@@ -56,44 +56,27 @@ void SocksFilter::tcp_connect (const TcpConnectRequestSP& req) {
 void SocksFilter::handle_connect (const CodeError& err, const ConnectRequestSP& req) {
     _EDEBUGTHIS("handle_connect, err: %d, state: %d", err.code().value(), (int)state);
     if (state == State::terminal) return NextFilter::handle_connect(err, req);
-    subreq_done(req);
+    if (state == State::connecting_proxy) subreq_done(req); // might be cancel for connect request while resolving in do_resolve()
     
     if (err) return do_error(err);
     auto read_err = read_start();
     if (read_err) return do_error(read_err);
 
-    if (socks->socks_resolve || addr) {
-        // we have resolved the host or proxy will resolve it for us
-        do_handshake();
-    } else {
-        // we will resolve the host ourselves
-        do_resolve();
-    }
-}
-
-void SocksFilter::write (const WriteRequestSP& req) {
-    _EDEBUGTHIS("write, state: %d", (int)state);
-    NextFilter::write(req);
+    if (socks->socks_resolve || addr) do_handshake(); // we have resolved the host or proxy will resolve it for us
+    else                              do_resolve();   // we will resolve the host ourselves
 }
 
 void SocksFilter::handle_write (const CodeError& err, const WriteRequestSP& req) {
     _EDEBUGTHIS("handle_write, err: %d, state: %d", err.code().value(), (int)state);
     if (state == State::terminal) return NextFilter::handle_write(err, req);
     subreq_done(req);
-
     if (err) return do_error(err);
-
-    switch (state) {
-        case State::handshake_write : state = State::handshake_reply; break;
-        case State::auth_write      : state = State::auth_reply;      break;
-        case State::connect_write   : state = State::connect_reply;   break;
-        default: abort(); // should not happen
-    }
 }
 
 void SocksFilter::handle_read (string& buf, const CodeError& err) {
     _EDEBUG("handle_read, %lu bytes, state %d, err:%s", buf.length(), (int)state, err.what());
     if (state == State::terminal) return NextFilter::handle_read(buf, err);
+    if (err) do_error();
 
     _EDUMP(buf, (int)buf.length(), 100);
 
@@ -103,7 +86,6 @@ void SocksFilter::handle_read (string& buf, const CodeError& err) {
     const char* p = buffer_ptr;
     // to the end pointer
     const char* pe = buffer_ptr + buf.size();
-    
     const char* eof = pe;
 
     // select reply parser by our state
@@ -142,11 +124,6 @@ void SocksFilter::handle_read (string& buf, const CodeError& err) {
     }
 }
 
-void SocksFilter::handle_shutdown (const CodeError& err, const ShutdownRequestSP& req) {
-    _EDEBUGTHIS("handle_shutdown, err: %d", err.code().value());
-    NextFilter::handle_shutdown(err, req);
-}
-
 void SocksFilter::handle_eof () {
     _EDEBUGTHIS("handle_eof, state: %d", (int)state);
     if (state == State::terminal) return NextFilter::handle_eof();
@@ -159,19 +136,20 @@ void SocksFilter::handle_eof () {
 
 void SocksFilter::reset () {
     _EDEBUGTHIS("reset, state: %d", (int)state);
+    state = State::initial;
     NextFilter::reset();
 }
 
 void SocksFilter::do_handshake () {
     _EDEBUGTHIS("do_handshake");
-    state = State::handshake_write;
+    state = State::handshake_reply;
     string data = socks->loginpassw() ? string("\x05\x02\x00\x02") : string("\x05\x01\x00");
     subreq_write(connect_request, new WriteRequest(data));
 }
 
 void SocksFilter::do_auth () {
     _EDEBUGTHIS("do_auth");
-    state = State::auth_write;
+    state = State::auth_reply;
     string data = string("\x01") + (char)socks->login.length() + socks->login + (char)socks->passw.length() + socks->passw;
     subreq_write(connect_request, new WriteRequest(data));
 }
@@ -196,7 +174,7 @@ void SocksFilter::do_resolve () {
 
 void SocksFilter::do_connect () {
     _EDEBUGTHIS("do_connect");
-    state = State::connect_write;
+    state = State::connect_reply;
     string data;
     if (addr) {
         if (addr.is_inet4()) {
@@ -217,7 +195,9 @@ void SocksFilter::do_connected () {
     _EDEBUGTHIS("do_connected");
     state = State::terminal;
     read_stop();
-    NextFilter::handle_connect(CodeError(), std::move(connect_request));
+    auto creq = connect_request;
+    connect_request = nullptr;
+    NextFilter::handle_connect(CodeError(), creq);
 }
 
 void SocksFilter::do_error (const CodeError& err) {
@@ -235,7 +215,9 @@ void SocksFilter::do_error (const CodeError& err) {
 
     state = (err.code() == std::errc::operation_canceled) ? State::initial : State::error;
 
-    NextFilter::handle_connect(err, std::move(connect_request));
+    auto creq = connect_request;
+    connect_request = nullptr;
+    NextFilter::handle_connect(err, creq);
 }
 
 }}}
