@@ -17,8 +17,6 @@ struct Socks : virtual Refcnt {
         if (passw.length() > MAX_LOGPASS_LENGTH) throw Error("Bad password length");
     }
 
-    Socks (const string& uri, bool socks_resolve = true) : Socks(URI::socks(uri), socks_resolve) {}
-
     Socks (const URI::socks& uri, bool socks_resolve = true) : Socks(uri.host(), uri.port(), uri.user(), uri.password(), socks_resolve) {}
 
     bool configured () const { return !host.empty(); }
