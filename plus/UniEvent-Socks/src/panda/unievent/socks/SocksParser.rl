@@ -2,7 +2,7 @@
     machine socks5_client_parser;
 
     action negotiate { 
-        _EDEBUG("negotiate");
+        panda_log_verbose_debug("negotiate");
         if(noauth) {
             do_connect();
         } else {
@@ -11,12 +11,12 @@
     }
     
     action auth {
-        _EDEBUG("auth");
+        panda_log_verbose_debug("auth");
         do_connect();
     }
     
     action connect {
-        _EDEBUG("connect");
+        panda_log_verbose_debug("connect");
         if(rep) {
             do_error();
             fbreak;
@@ -25,42 +25,42 @@
     }
     
     action auth_status {
-        _EDEBUG("auth status");
+        panda_log_verbose_debug("auth status");
         auth_status = (uint8_t)*fpc;
     }
 
     action noauth_auth_method {
-        _EDEBUG("noauth method");
+        panda_log_verbose_debug("noauth method");
         noauth = true;
     }
     
     action userpass_auth_method {
-        _EDEBUG("userpass method");
+        panda_log_verbose_debug("userpass method");
         noauth = false;
     }
 
     action noacceptable_auth_method {
-        _EDEBUG("noacceptable method");
+        panda_log_verbose_debug("noacceptable method");
         do_error();
         fbreak;
     }
 
     action ip4 {
-        _EDEBUG("ip4");
+        panda_log_verbose_debug("ip4");
     }
     
     action ip6 {
-        _EDEBUG("ip6");
+        panda_log_verbose_debug("ip6");
     }
 
     action atyp {
         atyp = (uint8_t)*fpc;
-        _EDEBUG("atyp: %d", atyp);
+        panda_log_verbose_debug("atyp: " << atyp);
     }
     
     action rep {
         rep = (uint8_t)*fpc;
-        _EDEBUG("rep: %d", rep);
+        panda_log_verbose_debug("rep: " << rep);
     }
     
     action error {

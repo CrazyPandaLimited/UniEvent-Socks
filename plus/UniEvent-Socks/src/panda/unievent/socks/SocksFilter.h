@@ -62,4 +62,8 @@ private:
     void do_error     (const CodeError& = CodeError(errc::socks_error));
 };
 
+inline std::ostream& operator<<(std::ostream& s, SocksFilter::State state) {
+    return s << int(state);
+}
+
 }}}
