@@ -323,7 +323,7 @@ case 18:
 f6:
 #line 18 "SocksParser.rl"
 	{
-        _EDEBUG("connect");
+        panda_log_verbose_debug("connect");
         if(rep) {
             do_error();
             {p++; goto _out; }
@@ -334,27 +334,27 @@ f6:
 f3:
 #line 48 "SocksParser.rl"
 	{
-        _EDEBUG("ip4");
+        panda_log_verbose_debug("ip4");
     }
 	goto _again;
 f4:
 #line 52 "SocksParser.rl"
 	{
-        _EDEBUG("ip6");
+        panda_log_verbose_debug("ip6");
     }
 	goto _again;
 f2:
 #line 56 "SocksParser.rl"
 	{
         atyp = (uint8_t)*p;
-        _EDEBUG("atyp: %d", atyp);
+        panda_log_verbose_debug("atyp: " << atyp);
     }
 	goto _again;
 f1:
 #line 61 "SocksParser.rl"
 	{
         rep = (uint8_t)*p;
-        _EDEBUG("rep: %d", rep);
+        panda_log_verbose_debug("rep: " << rep);
     }
 	goto _again;
 f0:
@@ -366,24 +366,24 @@ f0:
 f12:
 #line 27 "SocksParser.rl"
 	{
-        _EDEBUG("auth status");
+        panda_log_verbose_debug("auth status");
         auth_status = (uint8_t)*p;
     }
 #line 13 "SocksParser.rl"
 	{
-        _EDEBUG("auth");
+        panda_log_verbose_debug("auth");
         do_connect();
     }
 	goto _again;
 f10:
 #line 32 "SocksParser.rl"
 	{
-        _EDEBUG("noauth method");
+        panda_log_verbose_debug("noauth method");
         noauth = true;
     }
 #line 4 "SocksParser.rl"
 	{ 
-        _EDEBUG("negotiate");
+        panda_log_verbose_debug("negotiate");
         if(noauth) {
             do_connect();
         } else {
@@ -394,12 +394,12 @@ f10:
 f11:
 #line 37 "SocksParser.rl"
 	{
-        _EDEBUG("userpass method");
+        panda_log_verbose_debug("userpass method");
         noauth = false;
     }
 #line 4 "SocksParser.rl"
 	{ 
-        _EDEBUG("negotiate");
+        panda_log_verbose_debug("negotiate");
         if(noauth) {
             do_connect();
         } else {
@@ -410,13 +410,13 @@ f11:
 f9:
 #line 42 "SocksParser.rl"
 	{
-        _EDEBUG("noacceptable method");
+        panda_log_verbose_debug("noacceptable method");
         do_error();
         {p++; goto _out; }
     }
 #line 4 "SocksParser.rl"
 	{ 
-        _EDEBUG("negotiate");
+        panda_log_verbose_debug("negotiate");
         if(noauth) {
             do_connect();
         } else {
@@ -427,11 +427,11 @@ f9:
 f7:
 #line 48 "SocksParser.rl"
 	{
-        _EDEBUG("ip4");
+        panda_log_verbose_debug("ip4");
     }
 #line 18 "SocksParser.rl"
 	{
-        _EDEBUG("connect");
+        panda_log_verbose_debug("connect");
         if(rep) {
             do_error();
             {p++; goto _out; }
@@ -442,21 +442,21 @@ f7:
 f5:
 #line 48 "SocksParser.rl"
 	{
-        _EDEBUG("ip4");
+        panda_log_verbose_debug("ip4");
     }
 #line 52 "SocksParser.rl"
 	{
-        _EDEBUG("ip6");
+        panda_log_verbose_debug("ip6");
     }
 	goto _again;
 f8:
 #line 52 "SocksParser.rl"
 	{
-        _EDEBUG("ip6");
+        panda_log_verbose_debug("ip6");
     }
 #line 18 "SocksParser.rl"
 	{
-        _EDEBUG("connect");
+        panda_log_verbose_debug("connect");
         if(rep) {
             do_error();
             {p++; goto _out; }

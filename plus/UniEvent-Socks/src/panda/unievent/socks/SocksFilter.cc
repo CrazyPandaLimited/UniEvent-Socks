@@ -6,7 +6,12 @@
 #include <panda/unievent/Resolver.h>
 #include <vector>
 
+#include <panda/log.h>
+
 namespace panda { namespace unievent { namespace socks {
+
+log::Module sockslog("UniEvent::Socks", log::Notice);
+auto panda_log_module = &sockslog;
 
 namespace {
     #define MACHINE_DATA
@@ -34,7 +39,7 @@ void SocksFilter::init_parser () {
 void SocksFilter::listen () { throw ERROR_SERVER_USE; }
 
 void SocksFilter::tcp_connect (const TcpConnectRequestSP& req) {
-    _EDEBUGTHIS("tcp_connect: %p, state: %d", req.get(), (int)state);
+    panda_log_debug("tcp_connect: " << req << " state:" << state);
     if (state == State::terminal) return NextFilter::tcp_connect(req);
 
     if (req->addr) {
@@ -54,7 +59,7 @@ void SocksFilter::tcp_connect (const TcpConnectRequestSP& req) {
 }
 
 void SocksFilter::handle_connect (const CodeError& err, const ConnectRequestSP& req) {
-    _EDEBUGTHIS("handle_connect, err: %d, state: %d", err.code().value(), (int)state);
+    panda_log_debug("handle_connect, err: " << err.code() << " state:" << state);
     if (state == State::terminal) return NextFilter::handle_connect(err, req);
     if (state == State::connecting_proxy) subreq_done(req); // might be cancel for connect request while resolving in do_resolve()
     
@@ -67,18 +72,18 @@ void SocksFilter::handle_connect (const CodeError& err, const ConnectRequestSP& 
 }
 
 void SocksFilter::handle_write (const CodeError& err, const WriteRequestSP& req) {
-    _EDEBUGTHIS("handle_write, err: %d, state: %d", err.code().value(), (int)state);
+    panda_log_debug("handle_write, err: " << err.code() << " state:" << state);
     if (state == State::terminal) return NextFilter::handle_write(err, req);
     subreq_done(req);
     if (err) return do_error(err);
 }
 
 void SocksFilter::handle_read (string& buf, const CodeError& err) {
-    _EDEBUG("handle_read, %lu bytes, state %d, err:%s", buf.length(), (int)state, err.what());
+    panda_log_debug("handle_read, err: " << err.code() << " state:" << state << ", " << buf.length() << " bytes");
     if (state == State::terminal) return NextFilter::handle_read(buf, err);
     if (err) do_error();
 
-    _EDUMP(buf, (int)buf.length(), 100);
+    panda_log_verbose_debug(log::escaped{buf});
 
     // pointer to current buffer
     const char* buffer_ptr = buf.data();
@@ -103,10 +108,10 @@ void SocksFilter::handle_read (string& buf, const CodeError& err) {
             // need more input
             break;
         case State::error:
-            _EDEBUGTHIS("error state, wont parse");
+            panda_log_notice("error state, wont parse");
             return;
         default:
-            _EDEBUGTHIS("bad state, len: %d", int(p - buffer_ptr));
+            panda_log_notice("bad state, len: " << int(p - buffer_ptr));
             do_error();
             return;
     }
@@ -118,14 +123,14 @@ void SocksFilter::handle_read (string& buf, const CodeError& err) {
     #include "SocksParser.cc"
 
     if (state == State::error) {
-        _EDEBUGTHIS("parser exiting in error state on pos: %d", int(p - buffer_ptr));
+        panda_log_notice("parser exiting in error state on pos: " << int(p - buffer_ptr));
     } else if (state != State::parsing) {
-        _EDEBUGTHIS("parser finished");
+        panda_log_debug("parser finished");
     }
 }
 
 void SocksFilter::handle_eof () {
-    _EDEBUGTHIS("handle_eof, state: %d", (int)state);
+    panda_log_debug("handle_eof, state:" << state);
     if (state == State::terminal) return NextFilter::handle_eof();
 
     if (state == State::parsing || state == State::handshake_reply || state == State::auth_reply || state == State::connect_reply) {
@@ -135,27 +140,27 @@ void SocksFilter::handle_eof () {
 }
 
 void SocksFilter::reset () {
-    _EDEBUGTHIS("reset, state: %d", (int)state);
+    panda_log_debug("reset, state:" << state);
     state = State::initial;
     NextFilter::reset();
 }
 
 void SocksFilter::do_handshake () {
-    _EDEBUGTHIS("do_handshake");
+    panda_log_debug("do_handshake");
     state = State::handshake_reply;
     string data = socks->loginpassw() ? string("\x05\x02\x00\x02") : string("\x05\x01\x00");
     subreq_write(connect_request, new WriteRequest(data));
 }
 
 void SocksFilter::do_auth () {
-    _EDEBUGTHIS("do_auth");
+    panda_log_debug("do_auth");
     state = State::auth_reply;
     string data = string("\x01") + (char)socks->login.length() + socks->login + (char)socks->passw.length() + socks->passw;
     subreq_write(connect_request, new WriteRequest(data));
 }
 
 void SocksFilter::do_resolve () {
-    _EDEBUGTHIS("do_resolve_host");
+    panda_log_debug("do_resolve_host");
     state = State::resolving_host;
     resolve_request = handle->loop()->resolver()->resolve()
         ->node(host)
@@ -163,7 +168,7 @@ void SocksFilter::do_resolve () {
         ->hints(hints)
         ->use_cache(connect_request->cached)
         ->on_resolve([this](const AddrInfo& ai, const CodeError& err, const Resolver::RequestSP&) {
-            _EDEBUGTHIS("resolved err:%d", err.code().value());
+            panda_log_debug("resolved, err: " << err.code());
             if (err) return do_error(err);
             addr = ai.addr();
             resolve_request = nullptr;
@@ -173,7 +178,7 @@ void SocksFilter::do_resolve () {
 }
 
 void SocksFilter::do_connect () {
-    _EDEBUGTHIS("do_connect");
+    panda_log_debug("do_connect");
     state = State::connect_reply;
     string data;
     if (addr) {
@@ -192,7 +197,7 @@ void SocksFilter::do_connect () {
 }
 
 void SocksFilter::do_connected () {
-    _EDEBUGTHIS("do_connected");
+    panda_log_debug("do_connected");
     state = State::terminal;
     read_stop();
     auto creq = connect_request;
@@ -201,7 +206,7 @@ void SocksFilter::do_connected () {
 }
 
 void SocksFilter::do_error (const CodeError& err) {
-    _EDEBUGTHIS("do_error");
+    panda_log_debug("do_error");
     if (state == State::error) return;
 
     if (resolve_request) {
