@@ -1,6 +1,8 @@
 #pragma once
+#include "error.h"
 #include "Socks.h"
 #include <panda/unievent/Tcp.h>
+#include <iosfwd>
 
 namespace panda { namespace unievent { namespace socks {
 
@@ -45,9 +47,9 @@ private:
 
     void listen         () override;
     void tcp_connect    (const TcpConnectRequestSP&) override;
-    void handle_connect (const CodeError&, const ConnectRequestSP&) override;
-    void handle_read    (string&, const CodeError&) override;
-    void handle_write   (const CodeError&, const WriteRequestSP&) override;
+    void handle_connect (const std::error_code&, const ConnectRequestSP&) override;
+    void handle_read    (string&, const std::error_code&) override;
+    void handle_write   (const std::error_code&, const WriteRequestSP&) override;
     void handle_eof     () override;
 
     void reset () override;
@@ -59,11 +61,9 @@ private:
     void do_connect   ();
     void do_connected ();
     void do_eof       ();
-    void do_error     (const CodeError& = CodeError(errc::socks_error));
+    void do_error     (const std::error_code& = errc::socks_error);
 };
 
-inline std::ostream& operator<<(std::ostream& s, SocksFilter::State state) {
-    return s << int(state);
-}
+std::ostream& operator<< (std::ostream&, SocksFilter::State);
 
 }}}

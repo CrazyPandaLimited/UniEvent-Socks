@@ -58,8 +58,8 @@ void SocksFilter::tcp_connect (const TcpConnectRequestSP& req) {
     subreq_tcp_connect(connect_request, subreq);
 }
 
-void SocksFilter::handle_connect (const CodeError& err, const ConnectRequestSP& req) {
-    panda_log_debug("handle_connect, err: " << err.code() << " state:" << state);
+void SocksFilter::handle_connect (const std::error_code& err, const ConnectRequestSP& req) {
+    panda_log_debug("handle_connect, err: " << err << " state:" << state);
     if (state == State::terminal) return NextFilter::handle_connect(err, req);
     if (state == State::connecting_proxy) subreq_done(req); // might be cancel for connect request while resolving in do_resolve()
     
@@ -71,15 +71,15 @@ void SocksFilter::handle_connect (const CodeError& err, const ConnectRequestSP& 
     else                              do_resolve();   // we will resolve the host ourselves
 }
 
-void SocksFilter::handle_write (const CodeError& err, const WriteRequestSP& req) {
-    panda_log_debug("handle_write, err: " << err.code() << " state:" << state);
+void SocksFilter::handle_write (const std::error_code& err, const WriteRequestSP& req) {
+    panda_log_debug("handle_write, err: " << err << " state:" << state);
     if (state == State::terminal) return NextFilter::handle_write(err, req);
     subreq_done(req);
     if (err) return do_error(err);
 }
 
-void SocksFilter::handle_read (string& buf, const CodeError& err) {
-    panda_log_debug("handle_read, err: " << err.code() << " state:" << state << ", " << buf.length() << " bytes");
+void SocksFilter::handle_read (string& buf, const std::error_code& err) {
+    panda_log_debug("handle_read, err: " << err << " state:" << state << ", " << buf.length() << " bytes");
     if (state == State::terminal) return NextFilter::handle_read(buf, err);
     if (err) do_error();
 
@@ -167,8 +167,8 @@ void SocksFilter::do_resolve () {
         ->port(port)
         ->hints(hints)
         ->use_cache(connect_request->cached)
-        ->on_resolve([this](const AddrInfo& ai, const CodeError& err, const Resolver::RequestSP&) {
-            panda_log_debug("resolved, err: " << err.code());
+        ->on_resolve([this](const AddrInfo& ai, const std::error_code& err, const Resolver::RequestSP&) {
+            panda_log_debug("resolved, err: " << err);
             if (err) return do_error(err);
             addr = ai.addr();
             resolve_request = nullptr;
@@ -202,10 +202,10 @@ void SocksFilter::do_connected () {
     read_stop();
     auto creq = connect_request;
     connect_request = nullptr;
-    NextFilter::handle_connect(CodeError(), creq);
+    NextFilter::handle_connect({}, creq);
 }
 
-void SocksFilter::do_error (const CodeError& err) {
+void SocksFilter::do_error (const std::error_code& err) {
     panda_log_debug("do_error");
     if (state == State::error) return;
 
@@ -218,11 +218,15 @@ void SocksFilter::do_error (const CodeError& err) {
     read_stop();
     init_parser();
 
-    state = (err.code() == std::errc::operation_canceled) ? State::initial : State::error;
+    state = (err == std::errc::operation_canceled) ? State::initial : State::error;
 
     auto creq = connect_request;
     connect_request = nullptr;
     NextFilter::handle_connect(err, creq);
+}
+
+std::ostream& operator<< (std::ostream& s, SocksFilter::State state) {
+    return s << int(state);
 }
 
 }}}
