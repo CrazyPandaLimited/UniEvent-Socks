@@ -18,7 +18,7 @@
     action connect {
         panda_log_verbose_debug("connect");
         if(rep) {
-            do_error();
+            do_error(errc::protocol_error);
             fbreak;
         }
         do_connected();
@@ -41,7 +41,7 @@
 
     action noacceptable_auth_method {
         panda_log_verbose_debug("noacceptable method");
-        do_error();
+        do_error(errc::no_acceptable_auth_method);
         fbreak;
     }
 
@@ -64,7 +64,7 @@
     }
     
     action error {
-        do_error();
+        do_error(errc::protocol_error);
     }
     
     ver=0x05;

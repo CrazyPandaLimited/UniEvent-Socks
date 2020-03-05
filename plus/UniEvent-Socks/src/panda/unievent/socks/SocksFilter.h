@@ -47,9 +47,9 @@ private:
 
     void listen         () override;
     void tcp_connect    (const TcpConnectRequestSP&) override;
-    void handle_connect (const std::error_code&, const ConnectRequestSP&) override;
-    void handle_read    (string&, const std::error_code&) override;
-    void handle_write   (const std::error_code&, const WriteRequestSP&) override;
+    void handle_connect (const ErrorCode&, const ConnectRequestSP&) override;
+    void handle_read    (string&, const ErrorCode&) override;
+    void handle_write   (const ErrorCode&, const WriteRequestSP&) override;
     void handle_eof     () override;
 
     void reset () override;
@@ -61,7 +61,7 @@ private:
     void do_connect   ();
     void do_connected ();
     void do_eof       ();
-    void do_error     (const std::error_code& = errc::socks_error);
+    void do_error     (const ErrorCode&);
 };
 
 std::ostream& operator<< (std::ostream&, SocksFilter::State);

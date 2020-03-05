@@ -5,6 +5,8 @@ namespace panda { namespace unievent { namespace socks {
 
 enum class errc {
     socks_error = 1,
+    protocol_error,
+    no_acceptable_auth_method,
 };
 
 struct ErrorCategory : std::error_category {

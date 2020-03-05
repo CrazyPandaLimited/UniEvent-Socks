@@ -1,19 +1,13 @@
 
-#line 1 "SocksParser.rl"
+#line 1 "src/panda/unievent/socks/SocksParser.rl"
 
-#line 89 "SocksParser.rl"
+#line 89 "src/panda/unievent/socks/SocksParser.rl"
 
 
 #if defined(MACHINE_DATA)
 #undef MACHINE_DATA
 
-#line 11 "SocksParser.cc"
-static const char _socks5_client_parser_eof_actions[] = {
-	0, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 0, 0, 0, 
-	0, 0, 0
-};
-
+#line 11 "src/panda/unievent/socks/SocksParser.cc"
 static const int socks5_client_parser_start = 1;
 static const int socks5_client_parser_first_final = 13;
 static const int socks5_client_parser_error = 0;
@@ -23,70 +17,104 @@ static const int socks5_client_parser_en_auth_reply = 11;
 static const int socks5_client_parser_en_connect_reply = 1;
 
 
-#line 95 "SocksParser.rl"
+#line 95 "src/panda/unievent/socks/SocksParser.rl"
 
 #endif
 
 #if defined(MACHINE_INIT)
 #undef MACHINE_INIT
 
-#line 34 "SocksParser.cc"
+#line 28 "src/panda/unievent/socks/SocksParser.cc"
 	{
 	cs = socks5_client_parser_start;
 	}
 
-#line 102 "SocksParser.rl"
+#line 102 "src/panda/unievent/socks/SocksParser.rl"
 
 #endif
 
 #if defined(MACHINE_EXEC)
 #undef MACHINE_EXEC
 
-#line 46 "SocksParser.cc"
+#line 40 "src/panda/unievent/socks/SocksParser.cc"
 	{
 	short _widec;
 	if ( p == pe )
 		goto _test_eof;
-	if ( cs == 0 )
-		goto _out;
-_resume:
-	switch ( cs ) {
+	switch ( cs )
+	{
 case 1:
 	if ( (*p) == 5 )
-		goto tr1;
+		goto st2;
 	goto tr0;
-case 0:
+tr0:
+#line 66 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        do_error(errc::protocol_error);
+    }
+	goto st0;
+#line 57 "src/panda/unievent/socks/SocksParser.cc"
+st0:
+cs = 0;
 	goto _out;
+st2:
+	if ( ++p == pe )
+		goto _test_eof2;
 case 2:
 	if ( (*p) == 0 )
 		goto tr2;
 	goto tr0;
+tr2:
+#line 61 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        rep = (uint8_t)*p;
+        panda_log_verbose_debug("rep: " << rep);
+    }
+	goto st3;
+st3:
+	if ( ++p == pe )
+		goto _test_eof3;
 case 3:
+#line 79 "src/panda/unievent/socks/SocksParser.cc"
 	if ( (*p) == 0 )
-		goto tr3;
+		goto st4;
 	goto tr0;
+st4:
+	if ( ++p == pe )
+		goto _test_eof4;
 case 4:
 	goto tr4;
+tr4:
+#line 56 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        atyp = (uint8_t)*p;
+        panda_log_verbose_debug("atyp: " << atyp);
+    }
+	goto st5;
+st5:
+	if ( ++p == pe )
+		goto _test_eof5;
 case 5:
+#line 99 "src/panda/unievent/socks/SocksParser.cc"
 	_widec = (*p);
 	if ( (*p) < 5 ) {
 		if ( (*p) > 3 ) {
 			if ( 4 <= (*p) && (*p) <= 4 ) {
 				_widec = (short)(1152 + ((*p) - -128));
 				if ( 
-#line 85 "SocksParser.rl"
+#line 85 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x01 ) _widec += 256;
 				if ( 
-#line 86 "SocksParser.rl"
+#line 86 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x04 ) _widec += 512;
 			}
 		} else {
 			_widec = (short)(1152 + ((*p) - -128));
 			if ( 
-#line 85 "SocksParser.rl"
+#line 85 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x01 ) _widec += 256;
 			if ( 
-#line 86 "SocksParser.rl"
+#line 86 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x04 ) _widec += 512;
 		}
 	} else if ( (*p) > 15 ) {
@@ -94,28 +122,28 @@ atyp==0x04 ) _widec += 512;
 			if ( 17 <= (*p) )
  {				_widec = (short)(1152 + ((*p) - -128));
 				if ( 
-#line 85 "SocksParser.rl"
+#line 85 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x01 ) _widec += 256;
 				if ( 
-#line 86 "SocksParser.rl"
+#line 86 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x04 ) _widec += 512;
 			}
 		} else if ( (*p) >= 16 ) {
 			_widec = (short)(1152 + ((*p) - -128));
 			if ( 
-#line 85 "SocksParser.rl"
+#line 85 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x01 ) _widec += 256;
 			if ( 
-#line 86 "SocksParser.rl"
+#line 86 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x04 ) _widec += 512;
 		}
 	} else {
 		_widec = (short)(1152 + ((*p) - -128));
 		if ( 
-#line 85 "SocksParser.rl"
+#line 85 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x01 ) _widec += 256;
 		if ( 
-#line 86 "SocksParser.rl"
+#line 86 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x04 ) _widec += 512;
 	}
 	switch( _widec ) {
@@ -133,36 +161,142 @@ atyp==0x04 ) _widec += 512;
 	} else
 		goto tr7;
 	goto tr0;
+tr5:
+#line 48 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        panda_log_verbose_debug("ip4");
+    }
+	goto st6;
+tr7:
+#line 52 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        panda_log_verbose_debug("ip6");
+    }
+	goto st6;
+tr9:
+#line 48 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        panda_log_verbose_debug("ip4");
+    }
+#line 52 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        panda_log_verbose_debug("ip6");
+    }
+	goto st6;
+st6:
+	if ( ++p == pe )
+		goto _test_eof6;
 case 6:
+#line 191 "src/panda/unievent/socks/SocksParser.cc"
 	if ( (*p) == 2 )
 		goto tr13;
 	goto tr12;
+tr12:
+#line 18 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        panda_log_verbose_debug("connect");
+        if(rep) {
+            do_error(errc::protocol_error);
+            {p++; cs = 13; goto _out;}
+        }
+        do_connected();
+    }
+	goto st13;
+st13:
+	if ( ++p == pe )
+		goto _test_eof13;
 case 13:
-	goto tr24;
+#line 210 "src/panda/unievent/socks/SocksParser.cc"
+	goto st0;
+tr13:
+#line 18 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        panda_log_verbose_debug("connect");
+        if(rep) {
+            do_error(errc::protocol_error);
+            {p++; cs = 14; goto _out;}
+        }
+        do_connected();
+    }
+	goto st14;
+tr14:
+#line 48 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        panda_log_verbose_debug("ip4");
+    }
+#line 18 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        panda_log_verbose_debug("connect");
+        if(rep) {
+            do_error(errc::protocol_error);
+            {p++; cs = 14; goto _out;}
+        }
+        do_connected();
+    }
+	goto st14;
+tr16:
+#line 52 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        panda_log_verbose_debug("ip6");
+    }
+#line 18 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        panda_log_verbose_debug("connect");
+        if(rep) {
+            do_error(errc::protocol_error);
+            {p++; cs = 14; goto _out;}
+        }
+        do_connected();
+    }
+	goto st14;
+st14:
+	if ( ++p == pe )
+		goto _test_eof14;
 case 14:
+#line 257 "src/panda/unievent/socks/SocksParser.cc"
 	if ( (*p) == 2 )
 		goto tr13;
 	goto tr12;
+tr6:
+#line 48 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        panda_log_verbose_debug("ip4");
+    }
+	goto st7;
+tr10:
+#line 48 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        panda_log_verbose_debug("ip4");
+    }
+#line 52 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        panda_log_verbose_debug("ip6");
+    }
+	goto st7;
+st7:
+	if ( ++p == pe )
+		goto _test_eof7;
 case 7:
+#line 281 "src/panda/unievent/socks/SocksParser.cc"
 	_widec = (*p);
 	if ( (*p) < 4 ) {
 		if ( (*p) <= 3 ) {
 			_widec = (short)(128 + ((*p) - -128));
 			if ( 
-#line 85 "SocksParser.rl"
+#line 85 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x01 ) _widec += 256;
 		}
 	} else if ( (*p) > 4 ) {
 		if ( 5 <= (*p) )
  {			_widec = (short)(128 + ((*p) - -128));
 			if ( 
-#line 85 "SocksParser.rl"
+#line 85 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x01 ) _widec += 256;
 		}
 	} else {
 		_widec = (short)(128 + ((*p) - -128));
 		if ( 
-#line 85 "SocksParser.rl"
+#line 85 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x01 ) _widec += 256;
 	}
 	switch( _widec ) {
@@ -175,26 +309,45 @@ atyp==0x01 ) _widec += 256;
 	} else if ( _widec >= 128 )
 		goto tr12;
 	goto tr0;
+tr15:
+#line 48 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        panda_log_verbose_debug("ip4");
+    }
+#line 18 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        panda_log_verbose_debug("connect");
+        if(rep) {
+            do_error(errc::protocol_error);
+            {p++; cs = 15; goto _out;}
+        }
+        do_connected();
+    }
+	goto st15;
+st15:
+	if ( ++p == pe )
+		goto _test_eof15;
 case 15:
+#line 332 "src/panda/unievent/socks/SocksParser.cc"
 	_widec = (*p);
 	if ( (*p) < 4 ) {
 		if ( (*p) <= 3 ) {
 			_widec = (short)(128 + ((*p) - -128));
 			if ( 
-#line 85 "SocksParser.rl"
+#line 85 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x01 ) _widec += 256;
 		}
 	} else if ( (*p) > 4 ) {
 		if ( 5 <= (*p) )
  {			_widec = (short)(128 + ((*p) - -128));
 			if ( 
-#line 85 "SocksParser.rl"
+#line 85 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x01 ) _widec += 256;
 		}
 	} else {
 		_widec = (short)(128 + ((*p) - -128));
 		if ( 
-#line 85 "SocksParser.rl"
+#line 85 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x01 ) _widec += 256;
 	}
 	switch( _widec ) {
@@ -206,27 +359,47 @@ atyp==0x01 ) _widec += 256;
 			goto tr14;
 	} else if ( _widec >= 128 )
 		goto tr12;
-	goto tr24;
+	goto st0;
+tr8:
+#line 52 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        panda_log_verbose_debug("ip6");
+    }
+	goto st8;
+tr11:
+#line 48 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        panda_log_verbose_debug("ip4");
+    }
+#line 52 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        panda_log_verbose_debug("ip6");
+    }
+	goto st8;
+st8:
+	if ( ++p == pe )
+		goto _test_eof8;
 case 8:
+#line 384 "src/panda/unievent/socks/SocksParser.cc"
 	_widec = (*p);
 	if ( (*p) < 16 ) {
 		if ( (*p) <= 15 ) {
 			_widec = (short)(640 + ((*p) - -128));
 			if ( 
-#line 86 "SocksParser.rl"
+#line 86 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x04 ) _widec += 256;
 		}
 	} else if ( (*p) > 16 ) {
 		if ( 17 <= (*p) )
  {			_widec = (short)(640 + ((*p) - -128));
 			if ( 
-#line 86 "SocksParser.rl"
+#line 86 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x04 ) _widec += 256;
 		}
 	} else {
 		_widec = (short)(640 + ((*p) - -128));
 		if ( 
-#line 86 "SocksParser.rl"
+#line 86 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x04 ) _widec += 256;
 	}
 	switch( _widec ) {
@@ -239,26 +412,45 @@ atyp==0x04 ) _widec += 256;
 	} else if ( _widec >= 640 )
 		goto tr12;
 	goto tr0;
+tr17:
+#line 52 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        panda_log_verbose_debug("ip6");
+    }
+#line 18 "src/panda/unievent/socks/SocksParser.rl"
+	{
+        panda_log_verbose_debug("connect");
+        if(rep) {
+            do_error(errc::protocol_error);
+            {p++; cs = 16; goto _out;}
+        }
+        do_connected();
+    }
+	goto st16;
+st16:
+	if ( ++p == pe )
+		goto _test_eof16;
 case 16:
+#line 435 "src/panda/unievent/socks/SocksParser.cc"
 	_widec = (*p);
 	if ( (*p) < 16 ) {
 		if ( (*p) <= 15 ) {
 			_widec = (short)(640 + ((*p) - -128));
 			if ( 
-#line 86 "SocksParser.rl"
+#line 86 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x04 ) _widec += 256;
 		}
 	} else if ( (*p) > 16 ) {
 		if ( 17 <= (*p) )
  {			_widec = (short)(640 + ((*p) - -128));
 			if ( 
-#line 86 "SocksParser.rl"
+#line 86 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x04 ) _widec += 256;
 		}
 	} else {
 		_widec = (short)(640 + ((*p) - -128));
 		if ( 
-#line 86 "SocksParser.rl"
+#line 86 "src/panda/unievent/socks/SocksParser.rl"
 atyp==0x04 ) _widec += 256;
 	}
 	switch( _widec ) {
@@ -270,11 +462,14 @@ atyp==0x04 ) _widec += 256;
 			goto tr16;
 	} else if ( _widec >= 640 )
 		goto tr12;
-	goto tr24;
+	goto st0;
 case 9:
 	if ( (*p) == 5 )
-		goto tr18;
+		goto st10;
 	goto tr0;
+st10:
+	if ( ++p == pe )
+		goto _test_eof10;
 case 10:
 	switch( (*p) ) {
 		case -1: goto tr19;
@@ -282,106 +477,30 @@ case 10:
 		case 2: goto tr21;
 	}
 	goto tr0;
-case 17:
-	goto tr0;
-case 11:
-	if ( (*p) == 1 )
-		goto tr22;
-	goto tr0;
-case 12:
-	goto tr23;
-case 18:
-	goto tr24;
-	}
-
-	tr24: cs = 0; goto _again;
-	tr0: cs = 0; goto f0;
-	tr1: cs = 2; goto _again;
-	tr2: cs = 3; goto f1;
-	tr3: cs = 4; goto _again;
-	tr4: cs = 5; goto f2;
-	tr5: cs = 6; goto f3;
-	tr7: cs = 6; goto f4;
-	tr9: cs = 6; goto f5;
-	tr6: cs = 7; goto f3;
-	tr10: cs = 7; goto f5;
-	tr8: cs = 8; goto f4;
-	tr11: cs = 8; goto f5;
-	tr18: cs = 10; goto _again;
-	tr22: cs = 12; goto _again;
-	tr12: cs = 13; goto f6;
-	tr13: cs = 14; goto f6;
-	tr14: cs = 14; goto f7;
-	tr16: cs = 14; goto f8;
-	tr15: cs = 15; goto f7;
-	tr17: cs = 16; goto f8;
-	tr19: cs = 17; goto f9;
-	tr20: cs = 17; goto f10;
-	tr21: cs = 17; goto f11;
-	tr23: cs = 18; goto f12;
-
-f6:
-#line 18 "SocksParser.rl"
+tr19:
+#line 42 "src/panda/unievent/socks/SocksParser.rl"
 	{
-        panda_log_verbose_debug("connect");
-        if(rep) {
-            do_error();
-            {p++; goto _out; }
+        panda_log_verbose_debug("noacceptable method");
+        do_error(errc::no_acceptable_auth_method);
+        {p++; cs = 17; goto _out;}
+    }
+#line 4 "src/panda/unievent/socks/SocksParser.rl"
+	{ 
+        panda_log_verbose_debug("negotiate");
+        if(noauth) {
+            do_connect();
+        } else {
+            do_auth();
         }
-        do_connected();
     }
-	goto _again;
-f3:
-#line 48 "SocksParser.rl"
-	{
-        panda_log_verbose_debug("ip4");
-    }
-	goto _again;
-f4:
-#line 52 "SocksParser.rl"
-	{
-        panda_log_verbose_debug("ip6");
-    }
-	goto _again;
-f2:
-#line 56 "SocksParser.rl"
-	{
-        atyp = (uint8_t)*p;
-        panda_log_verbose_debug("atyp: " << atyp);
-    }
-	goto _again;
-f1:
-#line 61 "SocksParser.rl"
-	{
-        rep = (uint8_t)*p;
-        panda_log_verbose_debug("rep: " << rep);
-    }
-	goto _again;
-f0:
-#line 66 "SocksParser.rl"
-	{
-        do_error();
-    }
-	goto _again;
-f12:
-#line 27 "SocksParser.rl"
-	{
-        panda_log_verbose_debug("auth status");
-        auth_status = (uint8_t)*p;
-    }
-#line 13 "SocksParser.rl"
-	{
-        panda_log_verbose_debug("auth");
-        do_connect();
-    }
-	goto _again;
-f10:
-#line 32 "SocksParser.rl"
+	goto st17;
+tr20:
+#line 32 "src/panda/unievent/socks/SocksParser.rl"
 	{
         panda_log_verbose_debug("noauth method");
         noauth = true;
     }
-#line 4 "SocksParser.rl"
+#line 4 "src/panda/unievent/socks/SocksParser.rl"
 	{ 
         panda_log_verbose_debug("negotiate");
         if(noauth) {
@@ -390,14 +509,14 @@ f10:
             do_auth();
         }
     }
-	goto _again;
-f11:
-#line 37 "SocksParser.rl"
+	goto st17;
+tr21:
+#line 37 "src/panda/unievent/socks/SocksParser.rl"
 	{
         panda_log_verbose_debug("userpass method");
         noauth = false;
     }
-#line 4 "SocksParser.rl"
+#line 4 "src/panda/unievent/socks/SocksParser.rl"
 	{ 
         panda_log_verbose_debug("negotiate");
         if(noauth) {
@@ -406,88 +525,86 @@ f11:
             do_auth();
         }
     }
-	goto _again;
-f9:
-#line 42 "SocksParser.rl"
+	goto st17;
+st17:
+	if ( ++p == pe )
+		goto _test_eof17;
+case 17:
+#line 534 "src/panda/unievent/socks/SocksParser.cc"
+	goto tr0;
+case 11:
+	if ( (*p) == 1 )
+		goto st12;
+	goto tr0;
+st12:
+	if ( ++p == pe )
+		goto _test_eof12;
+case 12:
+	goto tr23;
+tr23:
+#line 27 "src/panda/unievent/socks/SocksParser.rl"
 	{
-        panda_log_verbose_debug("noacceptable method");
-        do_error();
-        {p++; goto _out; }
+        panda_log_verbose_debug("auth status");
+        auth_status = (uint8_t)*p;
     }
-#line 4 "SocksParser.rl"
-	{ 
-        panda_log_verbose_debug("negotiate");
-        if(noauth) {
-            do_connect();
-        } else {
-            do_auth();
-        }
-    }
-	goto _again;
-f7:
-#line 48 "SocksParser.rl"
+#line 13 "src/panda/unievent/socks/SocksParser.rl"
 	{
-        panda_log_verbose_debug("ip4");
+        panda_log_verbose_debug("auth");
+        do_connect();
     }
-#line 18 "SocksParser.rl"
-	{
-        panda_log_verbose_debug("connect");
-        if(rep) {
-            do_error();
-            {p++; goto _out; }
-        }
-        do_connected();
-    }
-	goto _again;
-f5:
-#line 48 "SocksParser.rl"
-	{
-        panda_log_verbose_debug("ip4");
-    }
-#line 52 "SocksParser.rl"
-	{
-        panda_log_verbose_debug("ip6");
-    }
-	goto _again;
-f8:
-#line 52 "SocksParser.rl"
-	{
-        panda_log_verbose_debug("ip6");
-    }
-#line 18 "SocksParser.rl"
-	{
-        panda_log_verbose_debug("connect");
-        if(rep) {
-            do_error();
-            {p++; goto _out; }
-        }
-        do_connected();
-    }
-	goto _again;
+	goto st18;
+st18:
+	if ( ++p == pe )
+		goto _test_eof18;
+case 18:
+#line 561 "src/panda/unievent/socks/SocksParser.cc"
+	goto st0;
+	}
+	_test_eof2: cs = 2; goto _test_eof; 
+	_test_eof3: cs = 3; goto _test_eof; 
+	_test_eof4: cs = 4; goto _test_eof; 
+	_test_eof5: cs = 5; goto _test_eof; 
+	_test_eof6: cs = 6; goto _test_eof; 
+	_test_eof13: cs = 13; goto _test_eof; 
+	_test_eof14: cs = 14; goto _test_eof; 
+	_test_eof7: cs = 7; goto _test_eof; 
+	_test_eof15: cs = 15; goto _test_eof; 
+	_test_eof8: cs = 8; goto _test_eof; 
+	_test_eof16: cs = 16; goto _test_eof; 
+	_test_eof10: cs = 10; goto _test_eof; 
+	_test_eof17: cs = 17; goto _test_eof; 
+	_test_eof12: cs = 12; goto _test_eof; 
+	_test_eof18: cs = 18; goto _test_eof; 
 
-_again:
-	if ( cs == 0 )
-		goto _out;
-	if ( ++p != pe )
-		goto _resume;
 	_test_eof: {}
 	if ( p == eof )
 	{
-	switch ( _socks5_client_parser_eof_actions[cs] ) {
-	case 1:
-#line 66 "SocksParser.rl"
+	switch ( cs ) {
+	case 1: 
+	case 2: 
+	case 3: 
+	case 4: 
+	case 5: 
+	case 6: 
+	case 7: 
+	case 8: 
+	case 9: 
+	case 10: 
+	case 11: 
+	case 12: 
+#line 66 "src/panda/unievent/socks/SocksParser.rl"
 	{
-        do_error();
+        do_error(errc::protocol_error);
     }
 	break;
-#line 484 "SocksParser.cc"
+#line 601 "src/panda/unievent/socks/SocksParser.cc"
 	}
 	}
 
 	_out: {}
 	}
 
-#line 109 "SocksParser.rl"
+#line 109 "src/panda/unievent/socks/SocksParser.rl"
 
 #endif
 
