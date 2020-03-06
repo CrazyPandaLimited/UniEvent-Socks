@@ -1,7 +1,8 @@
 #pragma once
+#include "error.h"
 #include <panda/string.h>
 #include <panda/uri/socks.h>
-#include <panda/unievent/Error.h>
+#include <panda/unievent/error.h>
 
 namespace panda { namespace unievent { namespace socks {
 
