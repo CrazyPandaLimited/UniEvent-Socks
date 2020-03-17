@@ -11,7 +11,7 @@
 namespace panda { namespace unievent { namespace socks {
 
 log::Module sockslog("UniEvent::Socks", log::Notice);
-auto panda_log_module = &sockslog;
+static const auto& panda_log_module = sockslog;
 
 namespace {
     #define MACHINE_DATA
