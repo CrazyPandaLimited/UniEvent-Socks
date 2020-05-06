@@ -1,5 +1,4 @@
 #include "SocksFilter.h"
-#include "Debug.h"
 #include <panda/string.h>
 #include <panda/unievent/Tcp.h>
 #include <panda/unievent/Timer.h>
@@ -10,8 +9,7 @@
 
 namespace panda { namespace unievent { namespace socks {
 
-log::Module sockslog("UniEvent::Socks", log::Notice);
-static const auto& panda_log_module = sockslog;
+static log::Module panda_log_module("UniEvent::Socks", log::Notice);
 
 namespace {
     #define MACHINE_DATA
@@ -23,12 +21,12 @@ const void* SocksFilter::TYPE = &typeid(SocksFilter);
 #define ERROR_SERVER_USE Error("this stream is listening but socks is a client filter only")
 
 SocksFilter::SocksFilter (Stream* stream, const SocksSP& socks) : StreamFilter(stream, TYPE, PRIORITY), socks(socks), state(State::initial) {
-    _ECTOR();
+    panda_log_ctor();
     if (stream->listening()) throw ERROR_SERVER_USE;
     init_parser();
 }
 
-SocksFilter::~SocksFilter () { _EDTOR(); }
+SocksFilter::~SocksFilter () { panda_log_dtor(); }
 
 void SocksFilter::init_parser () {
     atyp   = 0;
