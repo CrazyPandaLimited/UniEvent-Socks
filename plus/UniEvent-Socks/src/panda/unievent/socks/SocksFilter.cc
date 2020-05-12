@@ -216,7 +216,7 @@ void SocksFilter::do_error (const ErrorCode& err) {
     read_stop();
     init_parser();
 
-    state = (err == std::errc::operation_canceled) ? State::initial : State::error;
+    state = (err & std::errc::operation_canceled) ? State::initial : State::error;
 
     auto creq = connect_request;
     connect_request = nullptr;
