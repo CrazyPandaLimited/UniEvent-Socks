@@ -9,7 +9,7 @@
 
 namespace panda { namespace unievent { namespace socks {
 
-static log::Module panda_log_module("UniEvent::Socks", log::Level::Notice);
+static log::Module panda_log_module("UniEvent::Socks", log::NOTICE);
 
 namespace {
     #define MACHINE_DATA
