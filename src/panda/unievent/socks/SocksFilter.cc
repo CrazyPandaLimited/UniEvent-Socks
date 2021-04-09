@@ -181,10 +181,10 @@ void SocksFilter::do_connect () {
     string data;
     if (addr) {
         if (addr.is_inet4()) {
-            auto& sa4 = addr.inet4();
+            auto& sa4 = addr.as_inet4();
             data = string("\x05\x01\x00\x01") + string_view((char*)&sa4.addr(), 4) + string_view((char*)&sa4.get()->sin_port, 2);
         } else {
-            auto& sa6 = addr.inet6();
+            auto& sa6 = addr.as_inet6();
             data = string("\x05\x01\x00\x04") + string((char*)&sa6.addr(), 16) + string((char*)&sa6.get()->sin6_port, 2);
         }
     } else {
